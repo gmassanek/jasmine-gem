@@ -1,6 +1,7 @@
 require 'rack'
 require 'rack/utils'
 require 'jasmine-core'
+require_relative 'coffee'
 
 module Jasmine
   class RunAdapter

@@ -95,7 +95,6 @@ module Jasmine
       use Rack::Coffee, {
         :urls => ['/app/assets/javascripts', '/vendor/assets/javascripts']
       }
-        #:sources => ['/app/assets', '/vendor/assets'],
         #:target => '/public'
 
       if Jasmine::Dependencies.rails_3_asset_pipeline?

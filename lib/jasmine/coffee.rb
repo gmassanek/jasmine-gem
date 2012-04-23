@@ -17,7 +17,7 @@ module Rack
       @app = app
       @urls = [opts.fetch(:urls, '/javascripts')].flatten
       @root = Pathname.new(opts.fetch(:root) { Dir.pwd })
-      @request_prefix = '/public'
+      @request_prefix = '/assets'
       set_cache_header_opts(opts.fetch(:cache_control, false))
       @cache_compile_dir = if opts.fetch(:cache_compile, false)
         Pathname.new(Dir.mktmpdir)
@@ -34,22 +34,33 @@ module Rack
       return app.call(env) unless own_path?(path)
       return forbidden if path.include?('..')
 
-      desired_js_file = root + new_path.sub(%r{^/},'')
+      target_file = find_file(new_path)
+      return app.call(env) unless target_file
+
+      last_modified = target_file.mtime
+      return not_modified if check_modified_since(env, last_modified)
+      brewed = brew(target_file)
+      [200, headers_for(last_modified), [brewed]]
+    end
+
+    def find_file(path)
+      @urls.each do |url|
+        found = find_coffee_or_js(url + path)
+        return found if found
+      end
+      nil
+    end
+
+    def find_coffee_or_js(path)
+      desired_js_file = root + path.sub(%r{^/},'')
       if desired_js_file.file?
-        source_files = [desired_js_file]
+        desired_js_file
       else
-        desired_coffee_file = root + new_path.sub(/\.js$/, '.coffee').sub(%r{^/},'') 
+        desired_coffee_file = root + path.sub(/\.js$/, '.coffee').sub(%r{^/},'') 
         if desired_coffee_file.file?
-          source_files = [desired_coffee_file]
-        else
-          return app.call(env)
+          desired_coffee_file
         end
       end
-
-      last_modified = source_files.map {|file| file.mtime }.max
-      return not_modified if check_modified_since(env, last_modified)
-      brewed = source_files.map{|file| brew(file) }.join("\n")
-      [200, headers_for(last_modified), [brewed]]
     end
 
     def set_cache_header_opts(given)
@@ -61,7 +72,6 @@ module Rack
     end
 
     def brew(file)
-      p file
       if file.to_s[/\.coffee$/]
         if cache_compile_dir
           cache_file = cache_compile_dir + "#{file.mtime.to_i}_#{file.basename}"
@@ -107,8 +117,6 @@ module Rack
     end
 
     def own_path?(path)
-      p path
-      p urls
       path[/^#{request_prefix}/]
     end
   end

@@ -93,7 +93,6 @@ module Jasmine
       use Jasmine::CacheControl
 
       use Rack::Coffee, {
-        :root => '.',
         :urls => ['/app/assets/javascripts', '/vendor/assets/javascripts']
       }
         #:sources => ['/app/assets', '/vendor/assets'],

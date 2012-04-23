@@ -90,6 +90,14 @@ module Jasmine
     Rack::Builder.app do
       use Rack::Head
       use Jasmine::CacheControl
+
+      use Rack::Coffee, {
+        :root => '.',
+        :urls => ['/app/assets/javascripts', '/vendor/assets/javascripts']
+      }
+        #:sources => ['/app/assets', '/vendor/assets'],
+        #:target => '/public'
+
       if Jasmine::Dependencies.rails_3_asset_pipeline?
         map('/assets') do
           run Rails.application.assets
